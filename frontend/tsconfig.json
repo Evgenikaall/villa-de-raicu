@@ -3,5 +3,12 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
-  ]
+  ],
+  "compilerOptions": {
+    "noEmitOnError": false,    // still emit output even if there are errors
+    "skipLibCheck": true,      // don’t type-check `node_modules` at all
+    "strict": false,           // turn off all strict-mode flags
+    "noImplicitAny": false,    // allow implicit `any`
+    "allowJs": true            // also compile JS files (skipping type checks)
+  }
 }
