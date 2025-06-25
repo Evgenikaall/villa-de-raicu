@@ -1,5 +1,5 @@
 // components/floor/GuestsPage.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -13,43 +13,56 @@ import {
     Snackbar,
     Alert
 } from '@mui/material';
-import type { FurnitureItem, Guest } from '../types/furniture';
+import type { FurnitureItem, Reservation } from '../types/furniture';
 import { getFloors, getFloorData } from '../api/furnitureApi';
 
-type GuestRow = {
-    desk: string;
-    guest: Guest;
+export type ReservationRow = {
+    floorName: string;
+    deskLabel: string;
+    reservation: Reservation;
 };
 
 export default function GuestsPage() {
-    const [rows, setRows] = useState<GuestRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [sendCount, setSendCount] = useState(0);
+    const [rows, setRows] = useState<ReservationRow[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [sendCount, setSendCount] = useState<number>(0);
 
     useEffect(() => {
-        (async () => {
+        const fetchReservations = async () => {
             setLoading(true);
-            const floors = await getFloors();
-            // fetch each floor’s data
-            const datas = await Promise.all(floors.map(f => getFloorData(f.id)));
-            // flatten
-            const all: GuestRow[] = [];
-            datas.forEach(floor => {
-                (floor.furniture || []).forEach((item: FurnitureItem) => {
-                    (item.guests || []).forEach(g => {
-                        all.push({ desk: item.label, guest: g });
+            try {
+                const floors = await getFloors();
+                const floorsData = await Promise.all(floors.map(f => getFloorData(f.id)));
+
+                const all: ReservationRow[] = [];
+
+                floorsData.forEach(floor => {
+                    floor.furniture?.forEach((item: FurnitureItem) => {
+                        if (item.reservation) {
+                            all.push({
+                                floorName: floor.name,
+                                deskLabel: item.label,
+                                reservation: item.reservation
+                            });
+                        }
                     });
                 });
-            });
-            setRows(all);
-            setLoading(false);
-        })();
+
+                setRows(all);
+            } catch (error) {
+                console.error('Failed to load reservations:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchReservations();
     }, []);
 
     const handleSendAll = () => {
-        rows.forEach(({ desk, guest }) => {
-            console.log(`Message to ${guest.name} (${guest.phone}) at desk ${desk}`);
-            // e.g. call your SMS/email API here
+        rows.forEach(({ deskLabel, reservation }) => {
+            console.log(`Sending message to ${reservation.name} (${reservation.phone}) at ${deskLabel}`);
+            // Здесь можно интегрировать ваш API отправки сообщений
         });
         setSendCount(rows.length);
     };
@@ -73,8 +86,9 @@ export default function GuestsPage() {
                 <Table>
                     <TableHead>
                         <TableRow>
+                            <TableCell>Floor</TableCell>
                             <TableCell>Desk</TableCell>
-                            <TableCell>Guest</TableCell>
+                            <TableCell>Name</TableCell>
                             <TableCell>Phone</TableCell>
                             <TableCell align="right">Persons</TableCell>
                             <TableCell>From</TableCell>
@@ -84,21 +98,19 @@ export default function GuestsPage() {
                     <TableBody>
                         {rows.map((r, idx) => (
                             <TableRow key={idx}>
-                                <TableCell>{r.desk}</TableCell>
-                                <TableCell>{r.guest.name}</TableCell>
-                                <TableCell>{r.guest.phone}</TableCell>
-                                <TableCell align="right">{r.guest.persons}</TableCell>
+                                <TableCell>{r.floorName}</TableCell>
+                                <TableCell>{r.deskLabel}</TableCell>
+                                <TableCell>{r.reservation.name}</TableCell>
+                                <TableCell>{r.reservation.phone}</TableCell>
+                                <TableCell align="right">{r.reservation.persons}</TableCell>
                                 <TableCell>
-                                    {r.guest.reservedAt
-                                        ? new Date(r.guest.reservedAt).toLocaleDateString()
+                                    {r.reservation.reservedAt
+                                        ? new Date(r.reservation.reservedAt).toLocaleString()
                                         : '-'}
                                 </TableCell>
                                 <TableCell>
-                                    {r.guest.reservedUntil
-                                        ? new Date(r.guest.reservedUntil).toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })
+                                    {r.reservation.reservedUntil
+                                        ? new Date(r.reservation.reservedUntil).toLocaleString()
                                         : '-'}
                                 </TableCell>
                             </TableRow>
@@ -113,7 +125,9 @@ export default function GuestsPage() {
                 onClose={() => setSendCount(0)}
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
-                <Alert severity="success">Sent {sendCount} messages.</Alert>
+                <Alert severity="success">
+                    {`Sent ${sendCount} message${sendCount === 1 ? '' : 's'}.`}
+                </Alert>
             </Snackbar>
         </Paper>
     );
