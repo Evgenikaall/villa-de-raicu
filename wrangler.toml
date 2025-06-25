@@ -2,17 +2,17 @@ name = "fullstack-pages"
 compatibility_date = "2025-06-25"
 
 [build]
-command = "npm run build --workspace=frontend"
-cwd = "./"      # repo root
+command = "npm run build"
+cwd = "./frontend/"
 upload = { dir = "frontend/dist" }
 
 [site]
 bucket = "frontend/dist"
 
-[[containers]]
-class_name = "Api"
-image = "./backend/Dockerfile"
-instance_type = "basic"
+#[[containers]]
+#class_name = "Api"
+#image = "./backend/Dockerfile"
+#instance_type = "basic"
 
 [vars]
 ASSETS = "KV_ASSETS"
