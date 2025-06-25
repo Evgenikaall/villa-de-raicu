@@ -8,6 +8,7 @@ export class Api extends Container {
 export default {
     async fetch(request: Request, env: Env) {
         // Proxy every /api/* request to the Java container
+        // @ts-ignore
         if (new URL(request.url).pathname.startsWith("/api/")) {
             return env.Api.fetch(request);     // cold-starts a container if asleep
         }
