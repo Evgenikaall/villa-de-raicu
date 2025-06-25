@@ -1,9 +1,0 @@
-name = 'villa-de-raiku'
-
-compatibility_date = "2025-06-25"
-pages_build_output_dir = "./frontend/dist"
-
-[[containers]]
-class_name = "Api"
-image = "./backend/Dockerfile"
-instance_type = "basic"
