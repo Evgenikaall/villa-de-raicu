@@ -2,7 +2,7 @@ export type Guest = {
   name: string;
   phone: string;
   persons: number;
-  reservedAt?: string;    // ISO date, e.g. 2024-07-01
+  reservedAt?: string; // ISO date, e.g. 2024-07-01
   reservedUntil?: string; // ISO datetime, e.g. 2024-07-01T18:00
 };
 
@@ -14,10 +14,11 @@ export type FurnitureItem = {
   width: number;
   height: number;
   type: string;
-  guests?: Guest;
+  reservedBy?: string;
+  reservedAt?: string;
+  reservedUntil?: string;
+  guests?: Guest[];
 };
-
-
 
 export type FloorData = {
   id: number;
