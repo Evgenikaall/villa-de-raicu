@@ -1,4 +1,4 @@
-import type { FurnitureItem, Guest } from "../types/furniture";
+import type {FurnitureItem, Reservation} from "../types/furniture";
 
 export interface CanvasState {
   resizingId: number | null;
@@ -29,7 +29,7 @@ export type CanvasAction =
       payload: { id: number; width: number; height: number };
     }
   | { type: "UPDATE_DESK_LABEL"; payload: { id: number; label: string } }
-  | { type: "UPDATE_DESK_RESERVATION"; payload: { id: number; guest: Guest } }
+  | { type: "UPDATE_DESK_RESERVATION"; payload: { id: number; reservation : Reservation} }
   | { type: "ADD_DESK"; payload: FurnitureItem }
   | { type: "DELETE_DESK"; payload: number };
 
@@ -109,10 +109,7 @@ export function canvasReducer(
           item.id === action.payload.id
             ? {
                 ...item,
-                reservedBy: action.payload.guest.name,
-                reservedAt: action.payload.guest.reservedAt,
-                reservedUntil: action.payload.guest.reservedUntil,
-                guests: [action.payload.guest],
+                reservation: action.payload.reservation,
               }
             : item
         ),

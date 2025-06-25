@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useReducer } from "react";
 import { Image as KonvaImage, Layer, Stage } from "react-konva";
 import useImage from "use-image";
-import type { FurnitureItem, Guest } from "../../types/furniture.ts";
+import type {FurnitureItem, Reservation} from "../../types/furniture.ts";
 import {
   Alert,
   Box,
@@ -122,7 +122,7 @@ export default function FurnitureCanvas({
     });
   };
 
-  const handleReserve = (guest: Guest) => {
+  const handleReserve = (reservation: Reservation) => {
     if (!selectedDesk) return;
 
     // Найдём текущий стол и обновим его вручную
@@ -130,17 +130,14 @@ export default function FurnitureCanvas({
       item.id === selectedDesk.id
         ? {
             ...item,
-            guest,
-            reservedBy: guest.name,
-            reservedAt: guest.reservedAt,
-            reservedUntil: guest.reservedUntil,
+            reservation,
           }
         : item
     );
 
     dispatch({
       type: "UPDATE_DESK_RESERVATION",
-      payload: { id: selectedDesk.id, guest },
+      payload: { id: selectedDesk.id, reservation },
     });
 
     if (onSave) {
@@ -269,7 +266,7 @@ export default function FurnitureCanvas({
         open={state.reserveOpen}
         onClose={() => dispatch({ type: "OPEN_RESERVE", payload: false })}
         onSubmit={handleReserve}
-        initialData={selectedDesk?.guests?.[0]}
+        initialData={selectedDesk?.reservation}
       />
 
       <ChangeNameDialog

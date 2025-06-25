@@ -1,4 +1,4 @@
-export type Guest = {
+export type Reservation = {
   name: string;
   phone: string;
   persons: number;
@@ -14,10 +14,7 @@ export type FurnitureItem = {
   width: number;
   height: number;
   type: string;
-  reservedBy?: string;
-  reservedAt?: string;
-  reservedUntil?: string;
-  guests?: Guest[];
+  reservation?: Reservation ;
 };
 
 export type FloorData = {

@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 
 const CANVAS_MAX_WIDTH = 1200;
-const CANVAS_MAX_HEIGHT = 800;
+// const CANVAS_MAX_HEIGHT = 800;
 
 const Desks = () => {
   const [floors, setFloors] = useState<FloorData[]>([]);
