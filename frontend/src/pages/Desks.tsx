@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import FurnitureCanvas from "../components/floor/FurnitureCanvas.tsx";
-import type { FurnitureItem, FloorData } from "../types/furniture.ts";
+import { useCallback, useEffect, useRef, useState } from "react";
+import FurnitureCanvas from "../components/floor/FurnitureCanvas";
+import type { FurnitureItem, FloorData } from "../types/furniture";
 import {
   getFloorData,
   getFloors,
@@ -14,16 +14,38 @@ import {
   Select,
   Typography,
   Paper,
+  Button,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 
 const CANVAS_MAX_WIDTH = 1200;
-// const CANVAS_MAX_HEIGHT = 800;
 
 const Desks = () => {
   const [floors, setFloors] = useState<FloorData[]>([]);
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
   const [items, setItems] = useState<FurnitureItem[]>([]);
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [imageSize, setImageSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const handleImageLoad = useCallback(
+    (size: { width: number; height: number }) => {
+      setImageSize((prev) => {
+        if (!prev || prev.width !== size.width || prev.height !== size.height) {
+          return size;
+        }
+        return prev;
+      });
+    },
+    []
+  );
+
   const lastSavedItems = useRef<FurnitureItem[]>([]);
 
   useEffect(() => {
@@ -34,13 +56,23 @@ const Desks = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedFloor !== null) {
-      getFloorData(selectedFloor).then((floor) => {
-        setItems(floor.furniture || []);
-        lastSavedItems.current = floor.furniture ? [...floor.furniture] : [];
-        setImageUrl(floor.imageUrl);
+    if (selectedFloor === null) return;
+
+    getFloorData(selectedFloor).then((floor) => {
+      const cleanedFurniture = (floor.furniture || []).map((item) => {
+        if (
+          item.reservation?.reservedUntil &&
+          new Date(item.reservation.reservedUntil) < new Date()
+        ) {
+          return { ...item, reservation: undefined };
+        }
+        return item;
       });
-    }
+
+      setItems(cleanedFurniture);
+      lastSavedItems.current = [...cleanedFurniture];
+      setImageUrl(floor.imageUrl);
+    });
   }, [selectedFloor]);
 
   const handleSave = async (newItems: FurnitureItem[]) => {
@@ -60,6 +92,37 @@ const Desks = () => {
       }
     }
     setSelectedFloor(nextFloor);
+  };
+
+  const handleToggleEditMode = () => {
+    setIsEditMode((prev) => !prev);
+  };
+
+  const handleAddDesk = () => {
+    if (!imageSize) return;
+    const w = 60,
+      h = 40;
+    const x = Math.min(50, imageSize.width - w);
+    const y = Math.min(50, imageSize.height - h);
+    setItems((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        label: `Desk ${prev.length + 1}`,
+        x,
+        y,
+        width: w,
+        height: h,
+        type: "desk",
+      },
+    ]);
+  };
+
+  const handleSaveAll = async () => {
+    setIsSaving(true);
+    await handleSave(items);
+    setIsSaving(false);
+    setIsEditMode(false);
   };
 
   return (
@@ -96,13 +159,41 @@ const Desks = () => {
               </Select>
             </FormControl>
           </Box>
+
+          <Box display="flex" alignItems="center" gap={2}>
+            <FormControlLabel
+              control={
+                <Switch checked={isEditMode} onChange={handleToggleEditMode} />
+              }
+              label={isEditMode ? "Edit Mode" : "Reservation Mode"}
+            />
+            {isEditMode && (
+              <>
+                <Button onClick={handleAddDesk} variant="contained">
+                  Add Desk
+                </Button>
+                <Button
+                  onClick={handleSaveAll}
+                  variant="contained"
+                  color="success"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+              </>
+            )}
+          </Box>
         </Box>
+
         {imageUrl && (
           <FurnitureCanvas
             imageUrl={imageUrl}
             items={items}
             setItems={setItems}
             onSave={handleSave}
+            isEditMode={isEditMode}
+            isSaving={isSaving}
+            onImageLoad={handleImageLoad}
           />
         )}
       </Paper>

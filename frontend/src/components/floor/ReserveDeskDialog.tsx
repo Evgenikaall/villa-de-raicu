@@ -6,7 +6,7 @@ import {
   Button,
   TextField,
 } from "@mui/material";
-import {useEffect, useMemo, useState} from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Guest = {
   name: string;
@@ -24,11 +24,11 @@ type Props = {
 };
 
 export default function ReserveDeskDialog({
-                                            open,
-                                            initialData,
-                                            onClose,
-                                            onSubmit,
-                                          }: Props) {
+  open,
+  initialData,
+  onClose,
+  onSubmit,
+}: Props) {
   const [form, setForm] = useState<Guest>({
     name: "",
     phone: "",
@@ -40,13 +40,13 @@ export default function ReserveDeskDialog({
   useEffect(() => {
     if (open) {
       setForm(
-          initialData ?? {
-            name: "",
-            phone: "",
-            persons: 1,
-            reservedAt: "",
-            reservedUntil: "",
-          }
+        initialData ?? {
+          name: "",
+          phone: "",
+          persons: 1,
+          reservedAt: "",
+          reservedUntil: "",
+        }
       );
     }
   }, [open, initialData]);
@@ -83,85 +83,81 @@ export default function ReserveDeskDialog({
     return digits.startsWith("373") ? "+" + digits : "+373" + digits;
   };
 
-    const isValid = useMemo(() => {
-        const phoneDigits = form.phone.replace(/\D/g, "")
+  const isValid = useMemo(() => {
+    const phoneDigits = form.phone.replace(/\D/g, "");
 
-       console.log(phoneDigits)
+    const start = Date.parse(form.reservedAt ?? "");
+    const end = Date.parse(form.reservedUntil ?? "");
 
-        const start = Date.parse(form.reservedAt ?? "");
-        const end = Date.parse(form.reservedUntil ?? "");
-
-        return (
-            form.name.trim().length > 0 &&
-            phoneDigits.length === 13 && // 373 + 8 цифр
-            form.persons > 0 &&
-            !isNaN(start) &&
-            !isNaN(end) &&
-            start < end
-        );
-    }, [form]);
-
-    console.log(isValid)
+    return (
+      form.name.trim().length > 0 &&
+      phoneDigits.length > 8 &&
+      form.persons > 0 &&
+      !isNaN(start) &&
+      !isNaN(end) &&
+      start < end
+    );
+  }, [form]);
 
   return (
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Reserve Desk</DialogTitle>
-        <DialogContent>
-          <TextField
-              label="Your Name"
-              value={form.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-              fullWidth
-              autoFocus
-              sx={{ mb: 2 }}
-          />
-          <TextField
-              label="Phone Number"
-              value={applyPhoneMask(form.phone)}
-              onChange={(e) =>
-                  handleChange("phone", extractPurePhone(e.target.value))
-              }
-              fullWidth
-              sx={{ mb: 2 }}
-              placeholder="+373 (XXX) XXX XXX"
-          />
-          <TextField
-              label="Persons"
-              type="number"
-              inputProps={{ min: 1, max: 99 }}
-              value={form.persons}
-              onChange={(e) => handleChange("persons", e.target.value)}
-              fullWidth
-              sx={{ mb: 2 }}
-          />
-          <TextField
-              label="Reservation Start"
-              type="datetime-local"
-              value={form.reservedAt ?? ""}
-              onChange={(e) => handleChange("reservedAt", e.target.value)}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              sx={{ mb: 2 }}
-          />
-          <TextField
-              label="Reservation End"
-              type="datetime-local"
-              value={form.reservedUntil ?? ""}
-              onChange={(e) => handleChange("reservedUntil", e.target.value)}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button
-              onClick={() => onSubmit(form)}
-              disabled={!isValid}
-              variant="contained"
-          >
-            Reserve
-          </Button>
-        </DialogActions>
-      </Dialog>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Reserve Desk</DialogTitle>
+      <DialogContent>
+        <TextField
+          label="Your Name"
+          value={form.name}
+          onChange={(e) => handleChange("name", e.target.value)}
+          fullWidth
+          autoFocus
+          sx={{ mb: 2 }}
+        />
+        <TextField
+          label="Phone Number"
+          value={applyPhoneMask(form.phone)}
+          onChange={(e) =>
+            handleChange("phone", extractPurePhone(e.target.value))
+          }
+          fullWidth
+          sx={{ mb: 2 }}
+          placeholder="+373 (XXX) XXX XXX"
+        />
+        <TextField
+          label="Persons"
+          type="number"
+          inputProps={{ min: 1, max: 99 }}
+          value={form.persons}
+          onChange={(e) => handleChange("persons", e.target.value)}
+          fullWidth
+          sx={{ mb: 2 }}
+        />
+        <TextField
+          label="Reservation Start"
+          type="datetime-local"
+          value={form.reservedAt ?? ""}
+          onChange={(e) => handleChange("reservedAt", e.target.value)}
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+          sx={{ mb: 2 }}
+        />
+        <TextField
+          label="Reservation End"
+          type="datetime-local"
+          value={form.reservedUntil ?? ""}
+          onChange={(e) => handleChange("reservedUntil", e.target.value)}
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          onClick={() => onSubmit(form)}
+          disabled={!isValid}
+          variant="contained"
+        >
+          Reserve
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

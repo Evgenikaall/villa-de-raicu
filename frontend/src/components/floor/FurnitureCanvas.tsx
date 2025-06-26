@@ -1,32 +1,23 @@
-// components/floor/FurnitureCanvas.tsx
 import { useEffect, useMemo, useReducer } from "react";
 import { Image as KonvaImage, Layer, Stage } from "react-konva";
 import useImage from "use-image";
-import type {FurnitureItem, Reservation} from "../../types/furniture.ts";
-import {
-  Alert,
-  Box,
-  Button,
-  FormControlLabel,
-  Paper,
-  Snackbar,
-  Switch,
-} from "@mui/material";
+import type { FurnitureItem, Reservation } from "../../types/furniture";
+import { Box, Paper, Snackbar, Alert } from "@mui/material";
 
 import DeskItem from "./DeskItem";
 import ReserveDeskDialog from "./ReserveDeskDialog";
-import ChangeNameDialog from "./ChangeDeskNameDialog.tsx";
-import {
-  canvasReducer,
-  initialState,
-} from "../../reducers/FurnitureReducer.ts";
-import { useResizeDesk } from "../../hooks/useResizeDesk.ts";
+import ChangeNameDialog from "./ChangeDeskNameDialog";
+import { canvasReducer, initialState } from "../../reducers/FurnitureReducer";
+import { useResizeDesk } from "../../hooks/useResizeDesk";
 
 type Props = {
   imageUrl: string;
   items: FurnitureItem[];
   setItems: (items: FurnitureItem[]) => void;
   onSave?: (items: FurnitureItem[]) => Promise<void>;
+  isEditMode: boolean;
+  isSaving: boolean;
+  onImageLoad?: (size: { width: number; height: number }) => void;
 };
 
 export default function FurnitureCanvas({
@@ -34,6 +25,9 @@ export default function FurnitureCanvas({
   items,
   setItems,
   onSave,
+  isEditMode,
+  isSaving,
+  onImageLoad,
 }: Props) {
   const [image] = useImage(imageUrl);
   const [state, dispatch] = useReducer(canvasReducer, {
@@ -64,6 +58,12 @@ export default function FurnitureCanvas({
     return () => window.removeEventListener("mouseup", onUp);
   }, []);
 
+  useEffect(() => {
+    if (image && onImageLoad) {
+      onImageLoad({ width: image.width, height: image.height });
+    }
+  }, [image, onImageLoad]);
+
   const handleResizeStart = (item: FurnitureItem, e: any) => {
     dispatch({ type: "SET_RESIZING_ID", payload: item.id });
     dispatch({ type: "SET_SELECTED_DESK", payload: item.id });
@@ -84,7 +84,6 @@ export default function FurnitureCanvas({
     dispatch({ type: "SET_RESIZING_ID", payload: null });
   };
 
-  // --- Move desk
   const handleDeskMove = (updated: FurnitureItem) => {
     if (!image) return;
     const item = state.items.find((i) => i.id === updated.id);
@@ -97,9 +96,8 @@ export default function FurnitureCanvas({
     });
   };
 
-  // --- Click desk
   const handleDeskClick = (item: FurnitureItem, e?: any) => {
-    if (state.isEditMode) {
+    if (isEditMode) {
       dispatch({ type: "SET_SELECTED_DESK", payload: item.id });
     } else {
       dispatch({ type: "SET_SELECTED_DESK", payload: item.id });
@@ -109,7 +107,7 @@ export default function FurnitureCanvas({
   };
 
   const handleDeskNameClick = (item: FurnitureItem) => {
-    if (!state.isEditMode) return;
+    if (!isEditMode) return;
     dispatch({ type: "SET_SELECTED_DESK", payload: item.id });
     dispatch({ type: "OPEN_CHANGE_NAME", payload: true });
   };
@@ -125,7 +123,6 @@ export default function FurnitureCanvas({
   const handleReserve = (reservation: Reservation) => {
     if (!selectedDesk) return;
 
-    // Найдём текущий стол и обновим его вручную
     const updatedItems = state.items.map((item) =>
       item.id === selectedDesk.id
         ? {
@@ -143,7 +140,6 @@ export default function FurnitureCanvas({
     if (onSave) {
       dispatch({ type: "SET_IS_SAVING", payload: true });
 
-      // Используем обновлённый список
       onSave(updatedItems).then(() => {
         dispatch({ type: "SHOW_SAVED", payload: true });
         setTimeout(
@@ -155,70 +151,8 @@ export default function FurnitureCanvas({
     }
   };
 
-  const handleSaveAll = async () => {
-    dispatch({ type: "SET_IS_SAVING", payload: true });
-    if (onSave) await onSave(state.items);
-    dispatch({ type: "SHOW_SAVED", payload: true });
-    setTimeout(() => dispatch({ type: "SHOW_SAVED", payload: false }), 2000);
-    dispatch({ type: "TOGGLE_EDIT_MODE" });
-    dispatch({ type: "SET_IS_SAVING", payload: false });
-  };
-
-  const handleAdd = () => {
-    if (!image) return;
-    const w = 60,
-      h = 40,
-      x = Math.min(50, image.width - 60),
-      y = Math.min(50, image.height - 40);
-    dispatch({
-      type: "ADD_DESK",
-      payload: {
-        id: Date.now(),
-        label: `Desk ${state.items.length + 1}`,
-        x,
-        y,
-        width: w,
-        height: h,
-        type: "desk",
-      },
-    });
-  };
-
-  const handleDelete = (id: number) => {
-    dispatch({ type: "DELETE_DESK", payload: id });
-  };
-
-  console.log(state.items);
-
   return (
     <Paper sx={{ p: 3, mt: 2 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={state.isEditMode}
-              onChange={() => dispatch({ type: "TOGGLE_EDIT_MODE" })}
-            />
-          }
-          label={state.isEditMode ? "Edit Mode" : "Reservation Mode"}
-        />
-        {state.isEditMode && (
-          <>
-            <Button onClick={handleAdd} variant="contained">
-              Add Desk
-            </Button>
-            <Button
-              onClick={handleSaveAll}
-              variant="contained"
-              color="success"
-              disabled={state.isSaving}
-            >
-              {state.isSaving ? "Saving..." : "Save"}
-            </Button>
-          </>
-        )}
-      </Box>
-
       <Box
         sx={{
           border: "2px solid #1976d2",
@@ -232,8 +166,8 @@ export default function FurnitureCanvas({
         <Stage
           width={image?.width || 900}
           height={image?.height || 600}
-          onMouseMove={state.isEditMode ? handleMouseMove : undefined}
-          onMouseUp={state.isEditMode ? handleMouseUp : undefined}
+          onMouseMove={isEditMode ? handleMouseMove : undefined}
+          onMouseUp={isEditMode ? handleMouseUp : undefined}
         >
           <Layer>
             {image && <KonvaImage image={image} />}
@@ -247,11 +181,13 @@ export default function FurnitureCanvas({
                 <DeskItem
                   key={item.id}
                   item={{ ...item, ...size }}
-                  isEditMode={state.isEditMode}
+                  isEditMode={isEditMode}
                   isSelected={state.selectedDeskId === item.id}
                   resizingId={state.resizingId}
-                  onSelect={state.isEditMode ? handleDeskMove : handleDeskClick}
-                  onDelete={handleDelete}
+                  onSelect={isEditMode ? handleDeskMove : handleDeskClick}
+                  onDelete={(id) =>
+                    dispatch({ type: "DELETE_DESK", payload: id })
+                  }
                   onResizeStart={handleResizeStart}
                   handleDeskNameClick={handleDeskNameClick}
                 />
@@ -261,7 +197,6 @@ export default function FurnitureCanvas({
         </Stage>
       </Box>
 
-      {/* Use your existing ReserveDeskDialog */}
       <ReserveDeskDialog
         open={state.reserveOpen}
         onClose={() => dispatch({ type: "OPEN_RESERVE", payload: false })}
